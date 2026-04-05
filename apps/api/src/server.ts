@@ -36,8 +36,9 @@ async function main() {
   });
 
   try {
-    await server.listen({ port: 3001, host: '0.0.0.0' });
-    server.log.info('Server is running on port 3001');
+    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+    await server.listen({ port, host: '0.0.0.0' });
+    server.log.info(`Server is dynamically bound to PORT ${port} for Railway!`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
