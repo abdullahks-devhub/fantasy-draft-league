@@ -1,0 +1,17 @@
+# Railway Configuration for Wrestling Fantasy League
+# This file defines how the API and Background Worker are built/deployed.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && cd apps/api && npx prisma generate && cd ../.. && npm run build:api && npx playwright install chromium --with-deps"
+
+[deploy]
+startCommand = "node apps/api/dist/server.js"
+healthcheckPath = "/api/standings"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+
+
+# Note: In Railway, you should create a SECOND service for the worker 
+# and override the start command to: "node apps/api/dist/server.js --worker"
+# (Assuming we added a flag or a separate entry point)

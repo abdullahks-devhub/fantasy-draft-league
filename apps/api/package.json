@@ -1,0 +1,33 @@
+{
+  "name": "@fantasy/api",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fantasy/shared-types": "*",
+    "@fastify/cors": "^9.0.0",
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.0.0",
+    "cheerio": "1.0.0-rc.12",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.26.2",
+    "fastify-plugin": "^4.5.1",
+    "fuse.js": "^7.0.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "playwright": "^1.59.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.12.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.12.7",
+    "prisma": "^5.12.1",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5"
+  }
+}

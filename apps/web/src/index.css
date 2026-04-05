@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #080b12;
+    --bg-secondary: #0d1117;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2235;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-accent: rgba(99,102,241,0.3);
+    --glow-indigo: 0 0 40px rgba(99,102,241,0.15);
+    --glow-amber: 0 0 40px rgba(251,191,36,0.15);
+    --glow-emerald: 0 0 40px rgba(16,185,129,0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #080b12;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(16,185,129,0.05) 0%, transparent 50%);
+    background-attachment: fixed;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #e5e7eb;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f9fafb;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+
+  /* Selection */
+  ::selection { background-color: rgba(99,102,241,0.3); color: #ffffff; }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border bg-gray-900/60 backdrop-blur-xl shadow-xl;
+    border-color: rgba(255,255,255,0.07);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(99,102,241,0.2);
+    box-shadow: var(--glow-indigo);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg font-semibold text-sm bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-200;
+    box-shadow: 0 0 0 0 rgba(99,102,241,0);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+    transform: translateY(-1px);
+  }
+
+  .pill {
+    @apply px-2.5 py-1 rounded-md text-xs font-semibold border;
+  }
+  .pill-indigo { @apply pill bg-indigo-500/10 text-indigo-300 border-indigo-500/20; }
+  .pill-emerald { @apply pill bg-emerald-500/10 text-emerald-300 border-emerald-500/20; }
+  .pill-amber  { @apply pill bg-amber-500/10 text-amber-300 border-amber-500/20; }
+  .pill-red    { @apply pill bg-red-500/10 text-red-300 border-red-500/20; }
+  .pill-gray   { @apply pill bg-gray-700/50 text-gray-300 border-gray-600/30; }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-indigo {
+    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 50%, #6366f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-fire {
+    background: linear-gradient(135deg, #fb923c 0%, #ef4444 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glow-indigo { box-shadow: var(--glow-indigo); }
+  .glow-amber  { box-shadow: var(--glow-amber); }
+  .font-display { font-family: 'Outfit', sans-serif; }
+  .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+}
+
+/* Enter animations (manual, no plugin needed) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.animate-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.duration-300 { animation-duration: 0.3s; }
+.duration-500 { animation-duration: 0.5s; }
+.delay-100  { animation-delay: 0.1s; }
+.delay-200  { animation-delay: 0.2s; }

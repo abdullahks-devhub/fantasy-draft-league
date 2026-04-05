@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?
+  role          Role           @default(PLAYER)
+  playerSeasons PlayerSeason[]
+  wonSeasons    Season[]       @relation("SeasonWinner")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum Role {
+  ADMIN
+  PLAYER
+}
+
+enum SeasonStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+model Season {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean        @default(false)
+  status        SeasonStatus   @default(UPCOMING)
+  winnerId      String?
+  winner        User?          @relation("SeasonWinner", fields: [winnerId], references: [id])
+  playerSeasons PlayerSeason[]
+  pointRules    PointRule[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PlayerSeason {
+  id           String        @id @default(uuid())
+  userId       String
+  seasonId     String
+  user         User          @relation(fields: [userId], references: [id])
+  season       Season        @relation(fields: [seasonId], references: [id])
+  rosterSlots  RosterSlot[]
+  playerPoints PlayerPoint[]
+  waiverMoves  WaiverMove[]
+  locked       Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([userId, seasonId])
+}
+
+model Wrestler {
+  id             String           @id @default(uuid())
+  cagematchId    String?          @unique
+  name           String
+  currentTeam    String?
+  active         Boolean          @default(true)
+  aliases        WrestlerAlias[]
+  rosterSlots    RosterSlot[] @relation("WrestlerRosterSlots")
+  championships  ChampionStatus[]
+  matchInvolvements MatchParticipant[]
+  waiverMoves      WaiverMove[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model WrestlerAlias {
+  id         String   @id @default(uuid())
+  wrestlerId String
+  alias      String
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id])
+}
+
+model ChampionStatus {
+  id         String   @id @default(uuid())
+  wrestlerId String
+  titleName  String
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id])
+  updatedAt  DateTime @updatedAt
+}
+
+model RosterSlot {
+  id             String       @id @default(uuid())
+  playerSeasonId String
+  status         RosterStatus @default(ACTIVE)
+  isLocked       Boolean      @default(false)
+  playerSeason   PlayerSeason @relation(fields: [playerSeasonId], references: [id])
+  wrestlers      Wrestler[] @relation("WrestlerRosterSlots")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum RosterStatus {
+  ACTIVE
+  BENCH
+  IR
+}
+
+model Show {
+  id          String   @id @default(uuid())
+  cagematchId String?  @unique
+  name        String
+  date        DateTime
+  promotion   String
+  showType    String   // e.g. "TV", "PPV"
+  matches     Match[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Match {
+  id             String             @id @default(uuid())
+  showId         String
+  cagematchId    String?            @unique
+  matchType      String             // "Singles", "Tag Team", etc.
+  isMainEvent    Boolean            @default(false)
+  isTournament   Boolean            @default(false)
+  isFinals       Boolean            @default(false)
+  tournamentName String?
+  show           Show               @relation(fields: [showId], references: [id])
+  participants   MatchParticipant[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model MatchParticipant {
+  id         String   @id @default(uuid())
+  matchId    String
+  wrestlerId String
+  result     Result   // "WIN", "LOSS", "DRAW"
+  isTitleMatch Boolean @default(false)
+  isWorldTitle Boolean @default(false)
+  isDefense    Boolean @default(false)
+  match      Match    @relation(fields: [matchId], references: [id])
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id])
+
+  @@unique([matchId, wrestlerId])
+}
+
+enum Result {
+  WIN
+  LOSS
+  DRAW
+}
+
+model PointRule {
+  id             String   @id @default(uuid())
+  seasonId       String
+  showType       String?  // If null, applies generally
+  matchType      String?
+  result         Result?
+  isMainEvent    Boolean?
+  isTournament   Boolean?
+  isFinals       Boolean?
+  isTitleMatch   Boolean?
+  isWorldTitle   Boolean?
+  isDefense      Boolean?
+  tournamentName String?
+  points         Int      @default(0)
+  season         Season   @relation(fields: [seasonId], references: [id])
+}
+
+model PlayerPoint {
+  id              String       @id @default(uuid())
+  playerSeasonId  String
+  weekNumber      Int
+  points          Int          @default(0)
+  pointsBreakdown Json?
+  playerSeason    PlayerSeason @relation(fields: [playerSeasonId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([playerSeasonId, weekNumber])
+}
+
+model Trade {
+  id          String   @id @default(uuid())
+  data        Json     // Stores details of players and wrestlers involved
+  executedAt  DateTime @default(now())
+}
+
+model WaiverMove {
+  id             String       @id @default(uuid())
+  playerSeasonId String
+  wrestlerId     String     
+  action         WaiverAction
+  priority       Int
+  status         WaiverStatus @default(PENDING)
+  reason         String?
+  playerSeason   PlayerSeason @relation(fields: [playerSeasonId], references: [id])
+  wrestler       Wrestler     @relation(fields: [wrestlerId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum WaiverAction {
+  ADD
+  DROP
+}
+
+enum WaiverStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
