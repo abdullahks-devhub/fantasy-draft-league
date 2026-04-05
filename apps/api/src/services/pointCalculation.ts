@@ -43,7 +43,7 @@ export class PointCalculationService {
           let slotMatchPoints = 0;
           let matchSpecificBreakdown: any[] = [];
 
-          for (const rule of rules) {
+          for (const rule of rules as any[]) {
             let ruleMatches = true;
 
             // 1. Show Type
@@ -72,6 +72,7 @@ export class PointCalculationService {
               slotMatchPoints += rule.points;
               matchSpecificBreakdown.push({
                 ruleId: rule.id,
+                code: rule.code,
                 points: rule.points,
                 description: `${rule.showType || ''} ${rule.matchType || ''} ${rule.isMainEvent ? 'Main Event' : ''} ${rule.isFinals ? 'Finals' : ''} ${rule.result || 'Appearance'}`.trim()
               });

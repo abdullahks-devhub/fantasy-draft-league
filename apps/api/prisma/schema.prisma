@@ -169,6 +169,7 @@ model PointRule {
   isDefense      Boolean?
   tournamentName String?
   points         Int      @default(0)
+  code           String?  // e.g. "TVTW", "TD"
   season         Season   @relation(fields: [seasonId], references: [id])
 }
 
