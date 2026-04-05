@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Flame, TrendingUp, UserCheck, Users, Loader2, Sparkles, AlertCircle, Calendar } from 'lucide-react';
 import { useHotWrestlers, useFreeAgentAnalytics, usePredictions } from '../hooks/useHotWrestlers';
