@@ -21,6 +21,20 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     return { hotWrestlers };
   });
 
+  fastify.get<{ Querystring: { seasonId?: string } }>('/predictions', async (request, reply) => {
+    let { seasonId } = request.query;
+
+    if (!seasonId) {
+      const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+      if (activeSeason) seasonId = activeSeason.id;
+    }
+
+    if (!seasonId) return { predictions: [] };
+
+    const predictions = await analyticsService.getFreeAgentPredictions(seasonId);
+    return { predictions };
+  });
+
   fastify.get<{ Querystring: { seasonId?: string } }>('/free-agents', async (request, reply) => {
     let { seasonId } = request.query;
 
@@ -29,11 +43,9 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       if (activeSeason) seasonId = activeSeason.id;
     }
 
-    if (!seasonId) {
-      return { freeAgents: [] };
-    }
+    if (!seasonId) return { freeAgents: [] };
 
-    const freeAgents = await analyticsService.getFreeAgents(seasonId);
+    const freeAgents = await analyticsService.getFreeAgents(seasonId, 20);
     return { freeAgents };
   });
 }
