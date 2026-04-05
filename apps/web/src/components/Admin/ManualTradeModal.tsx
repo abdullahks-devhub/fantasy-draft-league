@@ -116,20 +116,26 @@ export default function ManualTradeModal({ isOpen, onClose, onSuccess }: ManualT
                       <div className="p-8 text-center text-gray-600 text-sm">Empty Roster</div>
                     ) : (
                       <div className="divide-y divide-gray-800">
-                        {rosterA?.map(slot => (
-                          <div 
-                            key={slot.wrestler.id}
-                            onClick={() => toggleSelect(slot.wrestler.id, 'A')}
-                            className={`p-3 text-sm flex justify-between items-center cursor-pointer transition-colors ${
-                              selectedA.includes(slot.wrestler.id) ? 'bg-indigo-500/10' : 'hover:bg-gray-800/40'
-                            }`}
-                          >
-                            <span className={selectedA.includes(slot.wrestler.id) ? 'text-indigo-300 font-bold' : 'text-gray-400'}>
-                              {slot.wrestler.name}
-                            </span>
-                            {selectedA.includes(slot.wrestler.id) && <Check className="w-4 h-4 text-indigo-400" />}
-                          </div>
-                        ))}
+                        {rosterA?.map(slot => {
+                          const primaryWrestler = slot.wrestlers[0];
+                          const displayName = slot.wrestlers.map(w => w.name).join(' + ');
+                          if (!primaryWrestler) return null;
+                          
+                          return (
+                            <div 
+                              key={slot.id}
+                              onClick={() => toggleSelect(primaryWrestler.id, 'A')}
+                              className={`p-3 text-sm flex justify-between items-center cursor-pointer transition-colors ${
+                                selectedA.includes(primaryWrestler.id) ? 'bg-indigo-500/10' : 'hover:bg-gray-800/40'
+                              }`}
+                            >
+                              <span className={selectedA.includes(primaryWrestler.id) ? 'text-indigo-300 font-bold' : 'text-gray-400'}>
+                                {displayName}
+                              </span>
+                              {selectedA.includes(primaryWrestler.id) && <Check className="w-4 h-4 text-indigo-400" />}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -164,20 +170,26 @@ export default function ManualTradeModal({ isOpen, onClose, onSuccess }: ManualT
                       <div className="p-8 text-center text-gray-600 text-sm">Empty Roster</div>
                     ) : (
                       <div className="divide-y divide-gray-800">
-                        {rosterB?.map(slot => (
-                          <div 
-                            key={slot.wrestler.id}
-                            onClick={() => toggleSelect(slot.wrestler.id, 'B')}
-                            className={`p-3 text-sm flex justify-between items-center cursor-pointer transition-colors ${
-                              selectedB.includes(slot.wrestler.id) ? 'bg-indigo-500/10' : 'hover:bg-gray-800/40'
-                            }`}
-                          >
-                            <span className={selectedB.includes(slot.wrestler.id) ? 'text-indigo-300 font-bold' : 'text-gray-400'}>
-                              {slot.wrestler.name}
-                            </span>
-                            {selectedB.includes(slot.wrestler.id) && <Check className="w-4 h-4 text-indigo-400" />}
-                          </div>
-                        ))}
+                        {rosterB?.map(slot => {
+                          const primaryWrestler = slot.wrestlers[0];
+                          const displayName = slot.wrestlers.map(w => w.name).join(' + ');
+                          if (!primaryWrestler) return null;
+
+                          return (
+                            <div 
+                              key={slot.id}
+                              onClick={() => toggleSelect(primaryWrestler.id, 'B')}
+                              className={`p-3 text-sm flex justify-between items-center cursor-pointer transition-colors ${
+                                selectedB.includes(primaryWrestler.id) ? 'bg-indigo-500/10' : 'hover:bg-gray-800/40'
+                              }`}
+                            >
+                              <span className={selectedB.includes(primaryWrestler.id) ? 'text-indigo-300 font-bold' : 'text-gray-400'}>
+                                {displayName}
+                              </span>
+                              {selectedB.includes(primaryWrestler.id) && <Check className="w-4 h-4 text-indigo-400" />}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
