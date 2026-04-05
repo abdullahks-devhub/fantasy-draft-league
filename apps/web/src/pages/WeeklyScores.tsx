@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Loader2, AlertCircle, Tv, Hash, User } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Loader2, AlertCircle, Tv, Hash } from 'lucide-react';
 import { useWeeklyScores } from '../hooks/useWeeklyScores';
 import { format } from 'date-fns';
 
 function MatchRow({ match }: { match: any }) {
-  const { winners, losers, drawers, matchType, isMainEvent } = match;
+  const { winners, losers, drawers, isMainEvent } = match;
 
   const formatUnit = (participants: any[]) => {
     return participants.map((p, idx) => (
@@ -17,7 +17,6 @@ function MatchRow({ match }: { match: any }) {
   };
 
   const allParticipants = [...winners, ...losers, ...drawers];
-  const totalPoints = allParticipants.reduce((sum, p) => sum + (p.codes?.length ? 1 : 0), 0); // Simplified point check
 
   return (
     <div className="py-3 px-2 hover:bg-gray-800/30 transition-colors rounded-lg group">
