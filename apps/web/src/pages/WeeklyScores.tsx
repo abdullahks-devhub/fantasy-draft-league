@@ -29,11 +29,19 @@ function ShowTypeBadge({ type }: { type: string }) {
 }
 
 export default function WeeklyScores() {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const { data, isLoading, isError, refetch } = useWeeklyScores(weekOffset || undefined);
+  const [targetWeek, setTargetWeek] = useState<number | undefined>(undefined);
+  const { data, isLoading, isError, refetch } = useWeeklyScores(targetWeek);
 
   const shows = data?.shows ?? [];
   const weekNumber = data?.weekNumber;
+
+  const navigateWeek = (delta: number) => {
+    if (!weekNumber) return;
+    const next = weekNumber + delta;
+    if (next >= 1) {
+      setTargetWeek(next);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 slide-in-from-bottom-4">
@@ -49,8 +57,9 @@ export default function WeeklyScores() {
         {/* Week navigator */}
         <div className="flex items-center gap-2 bg-gray-900/60 border border-gray-800 rounded-xl px-2 py-1.5">
           <button
-            onClick={() => setWeekOffset(w => w - 1)}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            onClick={() => navigateWeek(-1)}
+            disabled={!weekNumber || weekNumber <= 1}
+            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Previous week"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -60,8 +69,8 @@ export default function WeeklyScores() {
             {weekNumber ? `Week ${weekNumber}` : 'Latest'}
           </span>
           <button
-            onClick={() => setWeekOffset(w => Math.min(w + 1, 0))}
-            disabled={weekOffset >= 0}
+            onClick={() => navigateWeek(1)}
+            disabled={!weekNumber}
             className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Next week"
           >

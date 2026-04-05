@@ -51,9 +51,10 @@ model PlayerSeason {
   user         User          @relation(fields: [userId], references: [id])
   season       Season        @relation(fields: [seasonId], references: [id])
   rosterSlots  RosterSlot[]
-  playerPoints PlayerPoint[]
-  waiverMoves  WaiverMove[]
-  locked       Boolean       @default(false)
+  playerPoints    PlayerPoint[]
+  weeklyStandings  WeeklyStanding[]
+  waiverMoves     WaiverMove[]
+  locked          Boolean        @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -213,4 +214,15 @@ enum WaiverStatus {
   PENDING
   APPROVED
   DENIED
+}
+model WeeklyStanding {
+  id              String       @id @default(uuid())
+  playerSeasonId  String
+  weekNumber      Int
+  totalPoints     Int
+  rank            Int
+  playerSeason    PlayerSeason @relation(fields: [playerSeasonId], references: [id])
+  createdAt       DateTime     @default(now())
+
+  @@unique([playerSeasonId, weekNumber])
 }

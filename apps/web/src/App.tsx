@@ -11,7 +11,7 @@ import AdminRules from './pages/AdminRules';
 import Login from './pages/Login';
 import HistoryArchive from './pages/HistoryArchive';
 import { useAuthStore } from './store/authStore';
-import { useShallow } from 'zustand/react/shallow';
+
 import { Trophy, Settings, Users, Flame, LayoutTemplate, CalendarDays, UserSearch, ArrowRightLeft, User, LogOut, History } from 'lucide-react';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {

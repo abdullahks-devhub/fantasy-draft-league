@@ -1,27 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Trophy, TrendingUp, TrendingDown, Minus, AlertCircle, Calendar } from 'lucide-react';
-import { useStandings } from '../hooks/useStandings';
+import { useStandings, useStandingsHistory } from '../hooks/useStandings';
 import { useHotWrestlers } from '../hooks/useHotWrestlers';
 import { useSeasons, useActiveSeason } from '../hooks/useSeasons';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 
 function SkeletonRow() {
   return (
     <tr className="border-b border-gray-800/50">
       <td className="p-4"><div className="w-8 h-8 rounded-full bg-gray-800 animate-pulse" /></td>
       <td className="p-4"><div className="h-5 w-24 rounded bg-gray-800 animate-pulse" /></td>
-      <td className="p-4"><div className="w-5 h-5 rounded bg-gray-800 animate-pulse" /></td>
+      <td className="p-4 flex items-center justify-center"><div className="w-5 h-5 rounded bg-gray-800 animate-pulse" /></td>
       <td className="p-4"><div className="h-6 w-20 rounded-md bg-gray-800 animate-pulse" /></td>
       <td className="p-4 text-right"><div className="h-6 w-12 rounded bg-gray-800 animate-pulse ml-auto" /></td>
     </tr>
   );
 }
 
+const CHART_COLORS = [
+  '#6366f1', '#f59e0b', '#10b981', '#ef4444', 
+  '#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e',
+  '#22c55e', '#3b82f6', '#eab308', '#a855f7'
+];
+
 export default function Standings() {
   const { data: seasons } = useSeasons();
   const { data: activeSeason } = useActiveSeason();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
 
-  // Set default season to active season once loaded
   useEffect(() => {
     if (activeSeason && !selectedSeasonId) {
       setSelectedSeasonId(activeSeason.id);
@@ -30,20 +45,47 @@ export default function Standings() {
 
   const { data: standings, isLoading, isError, refetch } = useStandings(selectedSeasonId);
   const { data: hotWrestlers } = useHotWrestlers();
+  const { data: history } = useStandingsHistory(selectedSeasonId);
 
-  const currentSeason = seasons?.find(s => s.id === selectedSeasonId);
+  const currentSeason = seasons?.find((s: any) => s.id === selectedSeasonId);
   const isPastSeason = currentSeason && !currentSeason.isActive;
 
   const leader = standings?.[0];
   const topHot = hotWrestlers?.[0];
 
+  // Transform history for Recharts
+  const chartData = useMemo(() => {
+    if (!history || history.length === 0) return [];
+    
+    // Group by weekNumber
+    const weeks = Array.from(new Set(history.map(h => h.weekNumber))).sort((a: any, b: any) => a - b);
+    const players = Array.from(new Set(history.map(h => h.playerSeason.user.email.split('@')[0])));
+
+    return weeks.map(week => {
+      const weekEntry: any = { week: `Week ${week}` };
+      players.forEach(p => {
+        const h = history.find(entry => 
+          entry.weekNumber === week && 
+          entry.playerSeason.user.email.split('@')[0] === p
+        );
+        weekEntry[p] = h?.totalPoints || 0;
+      });
+      return weekEntry;
+    });
+  }, [history]);
+
+  const playerNames = useMemo(() => {
+    if (!history) return [];
+    return Array.from(new Set(history.map(h => h.playerSeason.user.email.split('@')[0])));
+  }, [history]);
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 slide-in-from-bottom-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-gray-800 pb-6">
         <div>
-          <h1 className="text-4xl font-black bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Global Standings</h1>
+          <h1 className="text-4xl font-black bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent italic tracking-tighter uppercase">Global Standings</h1>
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-gray-400">{currentSeason?.name || 'Loading season...'} — Live Data</p>
+            <p className="text-gray-400 font-medium">{currentSeason?.name || 'Loading season...'} — <span className="text-amber-500/80">Battle for Glory</span></p>
             {isPastSeason && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700 font-bold uppercase tracking-wider">Archive</span>
             )}
@@ -58,7 +100,7 @@ export default function Standings() {
               value={selectedSeasonId}
               onChange={(e) => setSelectedSeasonId(e.target.value)}
             >
-              {seasons?.map(s => (
+              {seasons?.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name} {s.isActive ? '(Active)' : ''}</option>
               ))}
             </select>
@@ -67,17 +109,13 @@ export default function Standings() {
             <span className="text-gray-400">Total Players: </span>
             <span className="font-bold text-white">{standings?.length ?? '—'}</span>
           </div>
-          <div className={`px-4 py-2 rounded-lg border backdrop-blur-sm text-sm ${isPastSeason ? 'bg-gray-900/40 border-gray-800 text-gray-500' : 'bg-indigo-900/20 border-indigo-500/20 text-indigo-400'}`}>
-            <span className={isPastSeason ? 'text-gray-600' : 'text-indigo-400'}>Status: </span>
-            <span className={`font-bold ${isPastSeason ? 'text-gray-500' : 'text-indigo-300'}`}>{isPastSeason ? 'Archived' : 'Active'}</span>
-          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-600/5 border border-amber-500/20 relative overflow-hidden backdrop-blur-sm">
           <Trophy className="w-24 h-24 absolute -right-4 -bottom-4 text-amber-500/10" />
-          <h3 className="text-amber-500 font-semibold mb-1">Current Leader</h3>
+          <h3 className="text-amber-500 font-semibold mb-1 uppercase text-xs tracking-widest">Current Leader</h3>
           {isLoading ? (
             <>
               <div className="h-8 w-32 rounded bg-amber-800/30 animate-pulse mt-1 mb-2" />
@@ -85,7 +123,7 @@ export default function Standings() {
             </>
           ) : leader ? (
             <>
-              <p className="text-3xl font-black text-white capitalize">{leader.name}</p>
+              <p className="text-3xl font-black text-white capitalize italic">{leader.name}</p>
               <p className="text-sm text-amber-200/60 mt-1">{leader.points} Points</p>
             </>
           ) : (
@@ -94,22 +132,70 @@ export default function Standings() {
         </div>
 
         <div className="p-6 rounded-2xl bg-gray-800/40 border border-gray-700/50 backdrop-blur-sm">
-          <h3 className="text-gray-400 font-semibold mb-1">Hot Wrestler</h3>
+          <h3 className="text-gray-400 font-semibold mb-1 uppercase text-xs tracking-widest">Hot Wrestler</h3>
           {topHot ? (
             <>
-              <p className="text-2xl font-bold text-white">{topHot.name}</p>
+              <p className="text-2xl font-bold text-white italic">{topHot.name}</p>
               <p className="text-sm text-emerald-400 mt-1">+{topHot.trendPoints} pts (4wk)</p>
             </>
           ) : (
-            <p className="text-gray-500 mt-2 text-sm">Loading...</p>
+            <p className="text-gray-500 mt-2 text-sm italic">Calculating trends...</p>
           )}
         </div>
 
         <div className="p-6 rounded-2xl bg-gray-800/40 border border-gray-700/50 backdrop-blur-sm">
-          <h3 className="text-gray-400 font-semibold mb-1">Top Free Agent</h3>
-          <p className="text-gray-500 text-sm mt-2">See Free Agents page →</p>
+          <h3 className="text-gray-400 font-semibold mb-1 uppercase text-xs tracking-widest">Weekly High</h3>
+          <p className="text-white font-bold text-2xl italic">---</p>
+          <p className="text-xs text-gray-600 mt-1 capitalize">Coming soon...</p>
         </div>
       </div>
+
+      {/* History Trends Chart */}
+      {chartData.length > 0 && (
+        <div className="p-6 rounded-2xl border border-gray-800/60 bg-gray-900/50 shadow-xl backdrop-blur-xl">
+          <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-indigo-500" />
+            Performance Trends
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                <XAxis 
+                  dataKey="week" 
+                  stroke="#9ca3af" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#9ca3af" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false}
+                  tickFormatter={(val) => `${val}pt`}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                />
+                <Legend />
+                {playerNames.map((name, idx) => (
+                  <Line 
+                    key={name}
+                    type="monotone" 
+                    dataKey={name} 
+                    stroke={CHART_COLORS[idx % CHART_COLORS.length]} 
+                    strokeWidth={3}
+                    dot={{ r: 4, strokeWidth: 2, fill: '#111827' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {isError && (
         <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
@@ -129,9 +215,9 @@ export default function Standings() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-800/80 border-b border-gray-700/50">
-                <th className="p-4 text-sm font-semibold text-gray-400">Rank</th>
+                <th className="p-4 text-sm font-semibold text-gray-400 text-center">Rank</th>
                 <th className="p-4 text-sm font-semibold text-gray-400">Player</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Trend</th>
+                <th className="p-4 text-sm font-semibold text-gray-400 text-center">Trend</th>
                 <th className="p-4 text-sm font-semibold text-gray-400">Roster</th>
                 <th className="p-4 text-sm font-semibold text-gray-400 text-right">Total Points</th>
               </tr>
@@ -140,29 +226,41 @@ export default function Standings() {
               {isLoading
                 ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
                 : standings?.map((player) => (
-                    <tr key={player.playerSeasonId} className="group hover:bg-gray-800/30 transition-colors">
+                    <tr key={player.playerSeasonId} className="group hover:bg-indigo-500/5 transition-colors">
                       <td className="p-4">
-                        <span className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                          player.rank === 1 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                          player.rank === 2 ? 'bg-gray-300/10 text-gray-300 border border-gray-400/20' :
-                          player.rank === 3 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' :
-                          'bg-gray-800 text-gray-500'
+                        <span className={`flex items-center justify-center mx-auto w-8 h-8 rounded-full text-sm font-black ${
+                          player.rank === 1 ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)]' :
+                          player.rank === 2 ? 'bg-gray-300 text-black' :
+                          player.rank === 3 ? 'bg-orange-600 text-white' :
+                          'bg-gray-800 text-gray-500 border border-gray-700'
                         }`}>
                           {player.rank}
                         </span>
                       </td>
-                      <td className="p-4 font-bold text-lg text-gray-200 capitalize group-hover:text-white transition-colors">{player.name}</td>
+                      <td className="p-4 font-black text-lg text-gray-200 capitalize group-hover:text-white transition-colors">{player.name}</td>
                       <td className="p-4">
-                        {player.trend === 'up' && <TrendingUp className="w-5 h-5 text-emerald-500" />}
-                        {player.trend === 'down' && <TrendingDown className="w-5 h-5 text-red-500" />}
-                        {player.trend === 'stable' && <Minus className="w-5 h-5 text-gray-500" />}
+                        <div className="flex justify-center">
+                          {player.trend === 'up' && (
+                            <div className="flex flex-col items-center text-emerald-500">
+                              <TrendingUp className="w-5 h-5" />
+                              <span className="text-[10px] uppercase font-black tracking-tighter">Rising</span>
+                            </div>
+                          )}
+                          {player.trend === 'down' && (
+                            <div className="flex flex-col items-center text-red-500">
+                              <TrendingDown className="w-5 h-5" />
+                              <span className="text-[10px] uppercase font-black tracking-tighter">Falling</span>
+                            </div>
+                          )}
+                          {player.trend === 'stable' && <Minus className="w-5 h-5 text-gray-600" />}
+                        </div>
                       </td>
                       <td className="p-4">
-                        <span className="px-2.5 py-1 rounded-md bg-gray-800 text-xs font-medium text-gray-300 border border-gray-700">
-                          {player.rosterSize}/15 Limit
+                        <span className="px-2.5 py-1 rounded-md bg-gray-800 text-xs font-black text-gray-300 border border-gray-700 uppercase tracking-tighter">
+                          {player.rosterSize}/15 Drafted
                         </span>
                       </td>
-                      <td className="p-4 text-right font-black text-xl text-indigo-400 font-mono">
+                      <td className="p-4 text-right font-black text-2xl text-indigo-400 font-mono italic">
                         {player.points}
                       </td>
                     </tr>

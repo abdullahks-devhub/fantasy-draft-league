@@ -4,14 +4,13 @@ import { api } from '../lib/api';
 export interface RosterSlot {
   id: string;
   playerSeasonId: string;
-  wrestlerId: string;
   status: string;
-  wrestler: {
+  wrestlers: {
     id: string;
     name: string;
     currentTeam: string | null;
     active: boolean;
-  };
+  }[];
 }
 
 export function useRoster(playerSeasonId: string) {

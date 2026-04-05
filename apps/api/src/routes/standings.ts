@@ -58,4 +58,40 @@ export async function standingsRoutes(fastify: FastifyInstance) {
 
     return { standings: rankedStandings };
   });
+
+  fastify.get<{ Querystring: { seasonId?: string } }>('/history', async (request, reply) => {
+    const { seasonId } = request.query;
+    const seasonFilter = seasonId ? { id: seasonId } : { isActive: true };
+
+    const season = await prisma.season.findFirst({ where: seasonFilter });
+    if (!season) return { history: [] };
+
+    const history = await prisma.weeklyStanding.findMany({
+      where: { playerSeason: { seasonId: season.id } },
+      include: { playerSeason: { include: { user: true } } },
+      orderBy: [{ weekNumber: 'asc' }, { rank: 'asc' }]
+    });
+
+    return { history };
+  });
+
+  fastify.get<{ Params: { weekNumber: string }, Querystring: { seasonId?: string } }>('/weekly/:weekNumber', async (request, reply) => {
+    const { weekNumber } = request.params;
+    const { seasonId } = request.query;
+    const seasonFilter = seasonId ? { id: seasonId } : { isActive: true };
+
+    const season = await prisma.season.findFirst({ where: seasonFilter });
+    if (!season) return { standings: [] };
+
+    const standings = await prisma.weeklyStanding.findMany({
+      where: {
+        weekNumber: parseInt(weekNumber, 10),
+        playerSeason: { seasonId: season.id }
+      },
+      include: { playerSeason: { include: { user: true } } },
+      orderBy: { rank: 'asc' }
+    });
+
+    return { standings };
+  });
 }

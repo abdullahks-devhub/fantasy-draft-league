@@ -13,21 +13,32 @@ import { useSeasons, useActiveSeason } from '../hooks/useSeasons';
 const columnHelper = createColumnHelper<RosterSlot>();
 
 const columns = [
-  columnHelper.accessor('wrestler.name', {
+  columnHelper.accessor('wrestlers', {
     header: 'Wrestler',
-    cell: info => (
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-gray-200">{info.getValue()}</span>
-      </div>
-    ),
+    cell: info => {
+      const wrestlers = info.getValue() || [];
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-gray-200">
+            {wrestlers.map(w => w.name).join(' + ')}
+          </span>
+          {wrestlers.length > 1 && <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">Unit</span>}
+        </div>
+      );
+    },
   }),
-  columnHelper.accessor('wrestler.currentTeam', {
+  columnHelper.accessor('wrestlers', {
+    id: 'promotion',
     header: 'Promotion',
-    cell: info => (
-      <span className="text-sm px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400">
-        {info.getValue() ?? 'Unknown'}
-      </span>
-    ),
+    cell: info => {
+      const wrestlers = info.getValue() || [];
+      const promotions = Array.from(new Set(wrestlers.map(w => w.currentTeam).filter(Boolean)));
+      return (
+        <span className="text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400">
+          {promotions.length > 0 ? promotions.join(', ') : 'Unknown'}
+        </span>
+      );
+    },
   }),
   columnHelper.accessor('status', {
     header: 'Status',

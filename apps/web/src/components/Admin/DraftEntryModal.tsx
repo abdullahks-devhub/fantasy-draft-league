@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Search, Loader2, CheckCircle2, UserPlus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { X, Loader2, CheckCircle2, UserPlus, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useStandings } from '../../hooks/useStandings';
 import { useWrestlers } from '../../hooks/useWrestlers';

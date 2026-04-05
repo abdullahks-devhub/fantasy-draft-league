@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Trophy, Calendar, Users, Star, ChevronDown, ChevronUp, History } from 'lucide-react';
@@ -71,7 +71,7 @@ export default function HistoryArchive() {
         </div>
       ) : (
         <div className="space-y-6">
-          {seasons.map((season, idx) => {
+          {seasons.map((season) => {
             const isExpanded = expandedSeasons[season.id];
             
             return (

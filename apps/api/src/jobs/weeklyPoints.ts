@@ -27,6 +27,43 @@ export async function runWeeklyPoints(weekNumber: number) {
     for (const ps of activePlayerSeasons) {
       await pointService.calculatePlayerPoints(ps.id, weekNumber, matches as any);
     }
+
+    // 4. GENERATE SNAPSHOT (Standings at end of this week)
+    console.log(`[${new Date().toISOString()}] Calculating cumulative standings for snapshot...`);
+    
+    const seasonResults = [];
+    for (const ps of activePlayerSeasons) {
+      const allPoints = await prisma.playerPoint.findMany({
+        where: { playerSeasonId: ps.id, weekNumber: { lte: weekNumber } }
+      });
+      const totalPoints = allPoints.reduce((sum, p) => sum + p.points, 0);
+      seasonResults.push({ playerSeasonId: ps.id, totalPoints });
+    }
+
+    // Sort by points desc to get rank
+    seasonResults.sort((a, b) => b.totalPoints - a.totalPoints);
+
+    for (let i = 0; i < seasonResults.length; i++) {
+      const res = seasonResults[i];
+      await prisma.weeklyStanding.upsert({
+        where: {
+          playerSeasonId_weekNumber: {
+            playerSeasonId: res.playerSeasonId,
+            weekNumber
+          }
+        },
+        update: {
+          totalPoints: res.totalPoints,
+          rank: i + 1
+        },
+        create: {
+          playerSeasonId: res.playerSeasonId,
+          weekNumber,
+          totalPoints: res.totalPoints,
+          rank: i + 1
+        }
+      });
+    }
     
     console.log(`[${new Date().toISOString()}] Generated points for ${activePlayerSeasons.length} players.`);
   } catch (err) {
