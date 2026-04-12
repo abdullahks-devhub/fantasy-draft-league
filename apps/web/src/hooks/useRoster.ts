@@ -8,6 +8,7 @@ export interface RosterSlot {
   wrestlers: {
     id: string;
     name: string;
+    promotion: string;
     currentTeam: string | null;
     active: boolean;
   }[];

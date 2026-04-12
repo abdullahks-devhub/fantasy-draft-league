@@ -34,34 +34,40 @@ async function run() {
         return;
     }
 
-    // 3. Find latest shows to derive what weeks to calculate
-    const lastShow = await prisma.show.findFirst({ 
-        where: { date: { gte: activeSeason.startDate } }, 
-        orderBy: { date: 'desc' } 
-    });
-    
-    let currentWeek = 1;
-    if (lastShow) {
-        currentWeek = Math.max(1, Math.ceil(((lastShow.date.getTime() - activeSeason.startDate.getTime()) / 86400000) / 7));
-    }
-
-    console.log(`Triggering calculations for Week ${currentWeek}...`);
-
-    const weekStart = new Date(activeSeason.startDate.getTime() + (currentWeek - 1) * 7 * 86400000);
-    const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+    // 3. Find all matches for the current active season
+    console.log(`Calculating points for all shows in the active season...`);
 
     const dbShows = await prisma.show.findMany({
-        where: { date: { gte: weekStart, lt: weekEnd } },
+        where: { date: { gte: activeSeason.startDate } },
         include: { matches: { include: { participants: true, show: true } } }
     });
 
-    const relevantMatches = dbShows.flatMap(s => s.matches);
-
-    for (const ps of playerSeasons) {
-        await pointCalcService.calculatePlayerPoints(ps.id, currentWeek, relevantMatches);
+    if (dbShows.length === 0) {
+        console.log('No shows found in database for this season. Scraper may have failed or filtered them out.');
+        return;
     }
 
-    console.log(`Successfully recalculated points for week ${currentWeek}.`);
+    // Iterate through weeks to ensure point recalculation is thorough
+    const latestDate = Math.max(...dbShows.map(s => s.date.getTime()));
+    const totalWeeks = Math.ceil(((latestDate - activeSeason.startDate.getTime()) / 86400000) / 7);
+
+    for (let week = 1; week <= totalWeeks; week++) {
+        const weekStart = new Date(activeSeason.startDate.getTime() + (week - 1) * 7 * 86400000);
+        const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+
+        const currentWeekMatches = dbShows
+            .filter(s => s.date >= weekStart && s.date < weekEnd)
+            .flatMap(s => s.matches);
+
+        if (currentWeekMatches.length === 0) continue;
+
+        console.log(`Recalculating Week ${week} (${currentWeekMatches.length} matches)...`);
+        for (const ps of playerSeasons) {
+            await pointCalcService.calculatePlayerPoints(ps.id, week, currentWeekMatches);
+        }
+    }
+
+    console.log(`Successfully recalculated points for the active season.`);
   } catch (err) {
     console.error('Fatal error during scrape:', err);
     process.exit(1);

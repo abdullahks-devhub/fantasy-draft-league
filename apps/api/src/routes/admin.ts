@@ -88,8 +88,17 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: { playerSeasonId: string, wrestlerIds: string[] } }>('/merge-units', async (request, reply) => {
     const { playerSeasonId, wrestlerIds } = request.body;
 
+    // Enforce max 3 tag-team/unit slots per player
+    const existingUnits = await prisma.rosterSlot.findMany({
+      where: { playerSeasonId },
+      include: { wrestlers: true }
+    });
+    const tagTeamCount = existingUnits.filter(s => s.wrestlers.length > 1).length;
+    if (tagTeamCount >= 3) {
+      return reply.code(400).send({ error: 'Maximum of 3 tag teams/units per roster. Split an existing unit first.' });
+    }
+
     return await prisma.$transaction(async (tx) => {
-       // 1. Find and delete existing slots for these wrestlers
        for (const id of wrestlerIds) {
          const slot = await tx.rosterSlot.findFirst({
            where: { playerSeasonId, wrestlers: { some: { id } } }
@@ -98,8 +107,6 @@ export async function adminRoutes(fastify: FastifyInstance) {
            await tx.rosterSlot.delete({ where: { id: slot.id } });
          }
        }
-
-       // 2. Create the new combined slot
        const newSlot = await tx.rosterSlot.create({
          data: {
            playerSeasonId,
@@ -107,10 +114,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
            wrestlers: { connect: wrestlerIds.map(id => ({ id })) }
          }
        });
-
        return { success: true, slot: newSlot };
     });
   });
+
 
   /**
    * POST /admin/split-units

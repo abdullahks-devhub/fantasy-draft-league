@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users as UsersIcon, Repeat, ArrowRightLeft, ShieldAlert, AlertCircle, CheckCircle2, XCircle, Loader2, RefreshCw, User, UserPlus, Settings } from 'lucide-react';
+import { Users as UsersIcon, Repeat, ArrowRightLeft, ShieldAlert, AlertCircle, CheckCircle2, XCircle, Loader2, RefreshCw, User, UserPlus, Settings, Archive } from 'lucide-react';
 import { useWaiverQueue } from '../hooks/useWaiverQueue';
 import { api } from '../lib/api';
 import ManualRosterModal from '../components/Admin/ManualRosterModal';
 import ManualTradeModal from '../components/Admin/ManualTradeModal';
 import DraftEntryModal from '../components/Admin/DraftEntryModal';
 import UnitManagerModal from '../components/Admin/UnitManagerModal';
+import SeasonManagerModal from '../components/Admin/SeasonManagerModal';
+import RosterStatusModal from '../components/Admin/RosterStatusModal';
 
 function SkeletonRow() {
   return (
@@ -28,6 +30,8 @@ export default function AdminDashboard() {
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+  const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
+  const [isRosterStatusModalOpen, setIsRosterStatusModalOpen] = useState(false);
   const [processResult, setProcessResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleProcessWaivers = async () => {
@@ -49,7 +53,7 @@ export default function AdminDashboard() {
     setProcessResult(null);
     try {
       const res = await api.post('/admin/trigger-scraper', {});
-      setProcessResult({ success: true, message: res.data.message || 'Scraper job triggered successfully.' });
+      setProcessResult({ success: true, message: res.data.message || 'Scraping process initiated via GitHub Actions. Check back in a few minutes.' });
     } catch (e: any) {
       setProcessResult({ success: false, message: e?.response?.data?.error ?? 'Job trigger failed.' });
     } finally {
@@ -146,8 +150,22 @@ export default function AdminDashboard() {
           onClick={() => setIsUnitModalOpen(true)}
           icon={<UsersIcon className="w-6 h-6 text-indigo-400" />}
           title="Manage Units"
-          desc="Merge Tag Teams"
+          desc="Merge / Split Tag Teams"
           color="indigo"
+        />
+        <AdminCard
+          onClick={() => setIsRosterStatusModalOpen(true)}
+          icon={<UsersIcon className="w-6 h-6 text-purple-400" />}
+          title="Roster Manager"
+          desc="Toggle Active / Bench / IR"
+          color="purple"
+        />
+        <AdminCard
+          onClick={() => setIsSeasonModalOpen(true)}
+          icon={<Archive className="w-6 h-6 text-violet-400" />}
+          title="Season Manager"
+          desc="Archive or start a new season"
+          color="violet"
         />
 
         {/* Trigger Job card */}
@@ -188,6 +206,16 @@ export default function AdminDashboard() {
       <UnitManagerModal
         isOpen={isUnitModalOpen}
         onClose={() => setIsUnitModalOpen(false)}
+        onSuccess={(msg) => setProcessResult({ success: true, message: msg })}
+      />
+      <SeasonManagerModal
+        isOpen={isSeasonModalOpen}
+        onClose={() => setIsSeasonModalOpen(false)}
+        onSuccess={(msg) => setProcessResult({ success: true, message: msg })}
+      />
+      <RosterStatusModal
+        isOpen={isRosterStatusModalOpen}
+        onClose={() => setIsRosterStatusModalOpen(false)}
         onSuccess={(msg) => setProcessResult({ success: true, message: msg })}
       />
 

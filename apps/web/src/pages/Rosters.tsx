@@ -17,12 +17,19 @@ const columns = [
     header: 'Wrestler',
     cell: info => {
       const wrestlers = info.getValue() || [];
+      const isUnit = wrestlers.length > 1;
       return (
         <div className="flex flex-col gap-0.5">
           <span className="font-bold text-gray-200">
-            {wrestlers.map(w => w.name).join(' + ')}
+            {wrestlers.map(w => w.name).join(' & ')}
           </span>
-          {wrestlers.length > 1 && <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">Unit</span>}
+          <span className={`text-[10px] font-bold uppercase tracking-tighter w-fit px-1.5 py-0.5 rounded ${
+            isUnit
+              ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+              : 'bg-gray-800 text-gray-500 border border-gray-700'
+          }`}>
+            {isUnit ? `Tag / Stable Unit` : 'Singles'}
+          </span>
         </div>
       );
     },
@@ -32,10 +39,20 @@ const columns = [
     header: 'Promotion',
     cell: info => {
       const wrestlers = info.getValue() || [];
-      const promotions = Array.from(new Set(wrestlers.map(w => w.currentTeam).filter(Boolean)));
+      // Use promotion field first, fall back to currentTeam
+      const promos = Array.from(
+        new Set(wrestlers.map(w => (w as any).promotion || w.currentTeam).filter(Boolean))
+      );
+      const label = promos.length > 0 ? promos.join(' / ') : 'Independent';
+      const promoColor = label.includes('WWE') ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+        : label.includes('AEW') ? 'text-blue-400 border-blue-500/30 bg-blue-500/10'
+        : label.includes('TNA') ? 'text-orange-400 border-orange-500/30 bg-orange-500/10'
+        : label.includes('ROH') ? 'text-purple-400 border-purple-500/30 bg-purple-500/10'
+        : label.includes('NJPW') ? 'text-red-400 border-red-500/30 bg-red-500/10'
+        : 'text-gray-400 border-gray-700 bg-gray-800';
       return (
-        <span className="text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400">
-          {promotions.length > 0 ? promotions.join(', ') : 'Unknown'}
+        <span className={`text-xs px-2 py-1 border rounded font-medium ${promoColor}`}>
+          {label}
         </span>
       );
     },
@@ -46,7 +63,7 @@ const columns = [
       const status = info.getValue() as 'ACTIVE' | 'BENCH' | 'IR';
       const colors = {
         ACTIVE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-        BENCH:  'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+        BENCH:  'bg-amber-500/10 text-amber-400 border-amber-500/20',
         IR:     'bg-red-500/10 text-red-400 border-red-500/20',
       };
       return <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${colors[status] ?? ''}`}>{status}</span>;
@@ -98,8 +115,10 @@ export default function Rosters() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const activeCount = data.filter(r => r.status === 'ACTIVE').length;
-  const irCount = data.filter(r => r.status === 'IR').length;
+  const activeCount   = data.filter(r => r.status === 'ACTIVE').length;
+  const irCount       = data.filter(r => r.status === 'IR').length;
+  const tagTeamCount  = data.filter(r => r.wrestlers.length > 1).length;
+
 
   const currentSeason = seasons?.find(s => s.id === selectedSeasonId);
   const isPastSeason = currentSeason && !currentSeason.isActive;
@@ -150,11 +169,23 @@ export default function Rosters() {
           <div className="flex gap-4">
             <div className="text-right">
               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Active Slots</p>
-              <p className="text-white font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700">{activeCount} / 15</p>
+              <p className={`font-mono px-3 py-1 rounded border ${
+                activeCount >= 10
+                  ? 'text-red-400 bg-red-500/10 border-red-500/30'
+                  : 'text-white bg-gray-800 border-gray-700'
+              }`}>{activeCount} / 10</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Tag Teams</p>
+              <p className={`font-mono px-3 py-1 rounded border ${
+                tagTeamCount >= 3
+                  ? 'text-amber-400 bg-amber-500/10 border-amber-500/30'
+                  : 'text-white bg-gray-800 border-gray-700'
+              }`}>{tagTeamCount} / 3</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">IR Slots</p>
-              <p className="text-white font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700">{irCount} / 2 IR</p>
+              <p className="text-white font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700">{irCount}</p>
             </div>
           </div>
         </div>

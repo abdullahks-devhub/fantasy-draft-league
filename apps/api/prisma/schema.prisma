@@ -55,6 +55,7 @@ model PlayerSeason {
   weeklyStandings  WeeklyStanding[]
   waiverMoves     WaiverMove[]
   locked          Boolean        @default(false)
+  lockedWrestlerIds Json?        // IDs of up to 5 wrestlers locked for the next season draft
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -65,6 +66,7 @@ model Wrestler {
   id             String           @id @default(uuid())
   cagematchId    String?          @unique
   name           String
+  promotion      String           @default("Independent")
   currentTeam    String?
   active         Boolean          @default(true)
   aliases        WrestlerAlias[]
@@ -118,6 +120,8 @@ model Show {
   matches     Match[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([name, date])
 }
 
 model Match {
@@ -125,6 +129,7 @@ model Match {
   showId         String
   cagematchId    String?            @unique
   matchType      String             // "Singles", "Tag Team", etc.
+  resultType     String?            // "WIN", "DRAW", "NO_CONTEST"
   isMainEvent    Boolean            @default(false)
   isTournament   Boolean            @default(false)
   isFinals       Boolean            @default(false)
