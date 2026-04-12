@@ -16,6 +16,8 @@ export interface Wrestler {
   name: string;
   currentTeam: string | null;
   active: boolean;
+  isHeel: boolean;
+  promotion: string;
   aliases?: WrestlerAlias[];
   championships?: ChampionStatus[];
 }
