@@ -1,22 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
+export interface Participant {
+  id: string;
+  name: string;
+  owner: string | null;
+  codes: string[];
+}
+
+export interface MatchResult {
+  matchId: string;
+  matchType: string;
+  isMainEvent: boolean;
+  winners: Participant[];
+  losers: Participant[];
+  drawers: Participant[];
+  resultType: string;
+}
+
 export interface ShowResult {
   showId: string;
   showName: string;
   date: string;
   promotion: string;
   showType: string;
-  matches: {
-    matchId: string;
-    matchType: string;
-    isMainEvent: boolean;
-    participants: {
-      wrestlerName: string;
-      wrestlerId: string;
-      result: 'WIN' | 'LOSS' | 'DRAW';
-    }[];
-  }[];
+  matches: MatchResult[];
 }
 
 export function useWeeklyScores(weekNumber?: number) {
