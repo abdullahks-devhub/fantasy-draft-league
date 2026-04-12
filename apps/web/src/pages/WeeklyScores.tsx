@@ -156,11 +156,8 @@ export default function WeeklyScores() {
                 ))}
               </div>
 
-              {/* Discord-style signature / metadata requested by user */}
               <div className="mt-4 pt-2 border-t border-gray-800/40 flex items-center gap-3 text-[10px] text-gray-700 font-mono italic">
-                 <span>S-(1. M 2. L 3. K 4. D 5.C/A)</span>
-                 <span>•</span>
-                 <span>{format(new Date(show.date), 'dd/MM/yyyy, h:mm a')}</span>
+                 <span>{format(new Date(show.date), 'MM/dd/yyyy')}</span>
               </div>
             </div>
           ))}

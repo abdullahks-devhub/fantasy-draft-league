@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const WEEK2_SHOWS = [
   {
     name: 'WWE Raw',
-    date: new Date('2025-02-10'),
+    date: new Date('2026-02-10'),
     promotion: 'WWE',
     showType: 'TV',
     matches: [
@@ -41,7 +41,7 @@ const WEEK2_SHOWS = [
   },
   {
     name: 'NJPW New Beginning in Osaka',
-    date: new Date('2025-02-11'),
+    date: new Date('2026-02-11'),
     promotion: 'NJPW',
     showType: 'PPV',
     matches: [
@@ -54,7 +54,7 @@ const WEEK2_SHOWS = [
   },
   {
     name: 'NXT',
-    date: new Date('2025-02-11'),
+    date: new Date('2026-02-11'),
     promotion: 'WWE',
     showType: 'TV',
     matches: [
@@ -64,7 +64,7 @@ const WEEK2_SHOWS = [
   },
   {
     name: 'AEW Dynamite',
-    date: new Date('2025-02-12'),
+    date: new Date('2026-02-12'),
     promotion: 'AEW',
     showType: 'TV',
     matches: [

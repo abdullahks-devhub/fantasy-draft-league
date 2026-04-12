@@ -61,7 +61,7 @@ export class AnalyticsService {
    * who have wrestled a match in an 'Active Company' within the last 365 days.
    */
   async getFreeAgents(seasonId: string, limit = 20) {
-    const yearAgo = subDays(new Date(), 365);
+    const yearAgo = new Date(new Date().getFullYear(), 0, 1); // January 1st of current calendar year
 
     // 1. Get all currently drafted wrestler IDs for this season
     const allDrafted = await prisma.rosterSlot.findMany({

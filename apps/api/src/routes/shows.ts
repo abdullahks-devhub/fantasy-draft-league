@@ -7,30 +7,29 @@ export async function showsRoutes(fastify: FastifyInstance) {
    * Returns all shows scraped in a given ISO week, defaulting to the latest.
    */
   fastify.get<{ Querystring: { weekNumber?: string } }>('/weekly', async (request, reply) => {
+    // 1. Fetch active season to ground our time math
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+    if (!activeSeason) return { shows: [], weekNumber: null };
+
     // Find the latest week if none provided
     let weekNumber: number | undefined = request.query.weekNumber
       ? parseInt(request.query.weekNumber, 10)
       : undefined;
 
     if (!weekNumber) {
-      // Derive "week number" from the most recent show date
-      const latest = await prisma.show.findFirst({ orderBy: { date: 'desc' } });
-      if (!latest) return { shows: [], weekNumber: null };
-      const d = latest.date;
-      const startOfYear = new Date(d.getFullYear(), 0, 1);
-      // Week number calculation (ISO-ish)
-      weekNumber = Math.ceil(((d.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+      // Derive "week number" relative to the active season's start date
+      const latest = await prisma.show.findFirst({ 
+        where: { date: { gte: activeSeason.startDate } }, 
+        orderBy: { date: 'desc' } 
+      });
+      const d = latest ? latest.date : new Date();
+      // Calculate how many weeks have passed since the season started
+      weekNumber = Math.max(1, Math.ceil(((d.getTime() - activeSeason.startDate.getTime()) / 86400000) / 7));
     }
 
-    // Calculate date range for that ISO week
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    const weekStart = new Date(yearStart.getTime() + (weekNumber - 1) * 7 * 86400000);
+    // Calculate date range starting from the season's start date
+    const weekStart = new Date(activeSeason.startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
     const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-
-    // 1. Fetch active season to get correct players
-    const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-    if (!activeSeason) return { shows: [], weekNumber: null };
 
     // 2. Fetch all player rosters for this season to build the mapping (WrestlerId -> PlayerName)
     const playerSeasons = await prisma.playerSeason.findMany({
