@@ -226,4 +226,64 @@ export async function adminRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ error: error.message });
     }
   });
+
+  /**
+   * PATCH /admin/wrestlers/:id/alignment
+   */
+  fastify.patch<{ Params: { id: string }, Body: { isHeel: boolean } }>('/wrestlers/:id/alignment', async (request, reply) => {
+    const { id } = request.params;
+    const { isHeel } = request.body;
+    
+    const wrestler = await (prisma.wrestler as any).update({
+      where: { id },
+      data: { isHeel }
+    });
+
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+    if (activeSeason) {
+      const now = new Date();
+      // Use compound unique key name_date to upsert
+      const show = await (prisma.show as any).upsert({
+        where: { name_date: { name: 'Administrative Events', date: now } },
+        update: {},
+        create: { name: 'Administrative Events', date: now, promotion: 'Admin', showType: 'TV' }
+      });
+
+      await (prisma.match as any).create({
+        data: {
+          showId: show.id,
+          matchType: 'Singles',
+          specialEvent: 'FACE_HEEL_TURN',
+          participants: { create: { wrestlerId: id, result: 'WIN' } }
+        }
+      });
+    }
+
+    return { success: true, wrestler };
+  });
+
+  /**
+   * POST /admin/record-special-event
+   */
+  fastify.post<{ Body: { wrestlerId: string, event: 'ROYAL_RUMBLE' | 'MITB' } }>('/record-special-event', async (request, reply) => {
+    const { wrestlerId, event } = request.body;
+    const now = new Date();
+    
+    const show = await (prisma.show as any).upsert({
+      where: { name_date: { name: 'Administrative Events', date: now } },
+      update: {},
+      create: { name: 'Administrative Events', date: now, promotion: 'Admin', showType: 'PPV' }
+    });
+
+    await (prisma.match as any).create({
+      data: {
+        showId: show.id,
+        matchType: 'Singles',
+        specialEvent: event,
+        participants: { create: { wrestlerId, result: 'WIN' } }
+      }
+    });
+
+    return { success: true };
+  });
 }

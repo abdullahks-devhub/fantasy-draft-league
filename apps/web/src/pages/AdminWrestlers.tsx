@@ -110,13 +110,14 @@ export default function AdminWrestlers() {
       <div className="rounded-xl border border-gray-800/60 bg-gray-900/50 overflow-hidden backdrop-blur-xl">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-gray-800/50 border-b border-gray-700/50">
-              <th className="p-4 text-sm font-semibold text-gray-400">Name</th>
-              <th className="p-4 text-sm font-semibold text-gray-400">Promotion</th>
-              <th className="p-4 text-sm font-semibold text-gray-400">Status</th>
-              <th className="p-4 text-sm font-semibold text-gray-400">Aliases</th>
-              <th className="p-4 text-sm font-semibold text-gray-400 text-right">Actions</th>
-            </tr>
+              <tr className="bg-gray-800/50 border-b border-gray-700/50">
+                <th className="p-4 text-sm font-semibold text-gray-400">Name</th>
+                <th className="p-4 text-sm font-semibold text-gray-400">Promotion</th>
+                <th className="p-4 text-sm font-semibold text-gray-400">Status</th>
+                <th className="p-4 text-sm font-semibold text-gray-400">Alignment</th>
+                <th className="p-4 text-sm font-semibold text-gray-400">Aliases</th>
+                <th className="p-4 text-sm font-semibold text-gray-400 text-right">Actions</th>
+              </tr>
           </thead>
           <tbody className="divide-y divide-gray-800/50">
             {isLoading ? (
@@ -156,9 +157,24 @@ export default function AdminWrestlers() {
                       {wrestler.active ? 'Active' : 'Inactive'}
                     </button>
                   </td>
+                   <td className="p-4">
+                    <button
+                      onClick={() => {
+                        api.patch(`/admin/wrestlers/${wrestler.id}/alignment`, { isHeel: !wrestler.isHeel })
+                           .then(() => refetch());
+                      }}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-all ${
+                        wrestler.isHeel 
+                          ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                          : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      }`}
+                    >
+                      {wrestler.isHeel ? 'HEEL' : 'FACE'}
+                    </button>
+                  </td>
                   <td className="p-4">
                     <div className="flex gap-1 flex-wrap max-w-xs">
-                      {wrestler.aliases?.map((a) => (
+                      {wrestler.aliases?.map((a: any) => (
                         <span key={a.id} className="inline-block px-1.5 py-0.5 bg-gray-800 text-[10px] text-gray-500 border border-gray-700 rounded">
                           {a.alias}
                         </span>

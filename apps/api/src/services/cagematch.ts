@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 import prisma from '../lib/db';
 
 export class CagematchService {
-  private baseUrl = 'https://www.cagematch.net';
+  private baseUrl = 'https://www.cagematch.net/en';
 
   /**
    * Scrapes recent shows based on the TV/PPV requirements.
@@ -34,12 +34,13 @@ export class CagematchService {
       const shows: any[] = [];
 
       // Parse the advanced results page containing recent shows
-      const showRows = $('.TRRow').toArray();
+      const showRows = $('.TRow1, .TRow2').toArray();
       for (const el of showRows) {
-        const nameCol = $(el).find('.TCol').eq(2);
+        // Indices based on the live structure: 0=Date, 1=Name, 2=Status
+        const nameCol = $(el).find('.TCol').eq(1);
         const showName = nameCol.text().trim();
         const showHref = nameCol.find('a').attr('href');
-        const dateStr = $(el).find('.TCol').eq(1).text().trim();
+        const dateStr = $(el).find('.TCol').eq(0).text().trim();
         const promotion = $(el).find('.TCol').eq(3).text().trim();
 
         if (showName && showHref) {
@@ -66,20 +67,31 @@ export class CagematchService {
     }
   }
 
+  private WORLD_TITLES = [
+    'AEW World', "AEW Women's World",
+    'WWE Championship', 'WWE World', 'World Heavyweight Championship',
+    "WWE Women's Championship", "WWE Women's World",
+    'NXT Championship', "NXT Women's Championship",
+    'ROH World', "ROH Women's World",
+    'IWGP World Heavyweight', "IWGP Women's Championship",
+    'AAA Mega', 'World Of Stardom',
+    'GHC Heavyweight', 'TNA World', 'TNA Knockouts World',
+    'Undisputed WWE'
+  ];
+
   async parseMatchesForShow(showHtml: string) {
     const $ = cheerio.load(showHtml);
     const matches: any[] = [];
 
     $('.Match').each((i, el) => {
       const matchText = $(el).text().trim();
-      const isMainEvent = $(el).prevAll('.MatchHeader').length === $('.MatchHeader').length - 1; // Simplistic main event check
+      const isMainEvent = $(el).prevAll('.MatchHeader').length === $('.MatchHeader').length - 1; 
       
       let resultType: 'WIN' | 'DRAW' | 'NO_CONTEST' = 'WIN';
       let winnersRaw: string[] = [];
       let losersRaw: string[] = [];
       let drawersRaw: string[] = [];
 
-      // Basic regex for winner/loser extraction
       if (matchText.includes(' defeats ')) {
         const parts = matchText.split(' defeats ');
         winnersRaw = [parts[0].trim()];
@@ -99,17 +111,37 @@ export class CagematchService {
         drawersRaw = matchText.split(' (')[0].split(' vs. ').flatMap(s => s.split(' & ')).map(s => s.trim());
         resultType = 'DRAW';
       } else if (matchText.includes(' vs. ')) {
-        // Unfinished or skipped
         return;
       }
 
-      // Metadata detections
-      const isTitleMatch = matchText.includes('Title') || matchText.includes('Championship');
-      const isWorldTitle = matchText.includes('World') && isTitleMatch;
+      // Title detection
+      const titleLine = matchText.match(/\(([^)]*Championship[^)]*)\)/);
+      const isTitleMatch = !!titleLine;
+      const titleName = titleLine ? titleLine[1] : '';
+      const isWorldTitle = isTitleMatch && this.WORLD_TITLES.some(wt => titleName.includes(wt));
+
+      // 5. Tournament Detection
+      const rrKeywords = ['Block', 'Group', 'Table', 'League', 'G1 Climax', 'Continental Classic', 'Five Star GP'];
+      const seKeywords = ['Tournament', 'First Round', 'Quarter Final', 'Semi Final', 'Semi-Final', 'Qualifying'];
+      
+      let isTournament = rrKeywords.some(k => matchText.includes(k)) || seKeywords.some(k => matchText.includes(k));
+      let tournamentType: 'SINGLE_ELIM' | 'ROUND_ROBIN' | null = null;
+      let isFinals = matchText.includes('Final') && !matchText.includes('Semi Final') && !matchText.includes('Quarter Final');
+
+      if (rrKeywords.some(k => matchText.includes(k))) {
+        tournamentType = 'ROUND_ROBIN';
+        isTournament = true;
+      } else if (seKeywords.some(k => matchText.includes(k)) || isFinals) {
+        tournamentType = 'SINGLE_ELIM';
+        isTournament = true;
+      }
 
       matches.push({
         matchType: matchText.includes('&') ? 'Tag Team' : 'Singles',
         isMainEvent,
+        isTournament,
+        tournamentType,
+        isFinals,
         resultType,
         isTitleMatch,
         isWorldTitle,
@@ -148,8 +180,11 @@ export class CagematchService {
           showId: show.id,
           matchType: m.matchType,
           isMainEvent: m.isMainEvent,
-          isTournament: false,
+          isTournament: m.isTournament,
+          tournamentType: m.tournamentType,
+          isFinals: m.isFinals,
           resultType: m.resultType,
+          rawText: m.rawText
         }
       });
 
@@ -199,12 +234,16 @@ export class CagematchService {
 
   private detectShowType(showName: string): string {
     const name = showName.toLowerCase();
+    // NJPW Road to are TV, not PPV
+    if (name.includes('road to')) return 'TV';
+
     if (
       name.includes('wrestlemania') || name.includes('summerslam') || name.includes('royal rumble') ||
       name.includes('survivor series') || name.includes('all in') || name.includes('all out') ||
       name.includes('double or nothing') || name.includes('dynasty') || name.includes('forbidden door') ||
       name.includes('payback') || name.includes('backlash') || name.includes('elimination chamber') ||
-      name.includes('night of champions') || name.includes('clash')
+      name.includes('night of champions') || name.includes('clash') || name.includes('no surrender') ||
+      name.includes('bound for glory') || name.includes('sacrifice') || name.includes('multiverse')
     ) return 'PPV';
     return 'TV';
   }

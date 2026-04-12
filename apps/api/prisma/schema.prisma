@@ -69,6 +69,7 @@ model Wrestler {
   promotion      String           @default("Independent")
   currentTeam    String?
   active         Boolean          @default(true)
+  isHeel         Boolean          @default(false)  // Admin-toggled for face/heel turn scoring
   aliases        WrestlerAlias[]
   rosterSlots    RosterSlot[] @relation("WrestlerRosterSlots")
   championships  ChampionStatus[]
@@ -132,8 +133,11 @@ model Match {
   resultType     String?            // "WIN", "DRAW", "NO_CONTEST"
   isMainEvent    Boolean            @default(false)
   isTournament   Boolean            @default(false)
+  tournamentType String?            // "SINGLE_ELIM", "ROUND_ROBIN"
   isFinals       Boolean            @default(false)
   tournamentName String?
+  specialEvent   String?            // "ROYAL_RUMBLE", "MITB", "FACE_HEEL_TURN"
+  rawText        String?            // Original match string for audit/recalculating
   show           Show               @relation(fields: [showId], references: [id])
   participants   MatchParticipant[]
   createdAt      DateTime           @default(now())
@@ -161,21 +165,25 @@ enum Result {
 }
 
 model PointRule {
-  id             String   @id @default(uuid())
-  seasonId       String
-  showType       String?  // If null, applies generally
-  matchType      String?
-  result         Result?
-  isMainEvent    Boolean?
-  isTournament   Boolean?
-  isFinals       Boolean?
-  isTitleMatch   Boolean?
-  isWorldTitle   Boolean?
-  isDefense      Boolean?
-  tournamentName String?
-  points         Int      @default(0)
-  code           String?  // e.g. "TVTW", "TD"
-  season         Season   @relation(fields: [seasonId], references: [id])
+  id              String   @id @default(uuid())
+  seasonId        String
+  label           String?  // Human-readable label, e.g. "TV Singles Win"
+  showType        String?  // "TV" | "PPV" | null = applies to both
+  matchType       String?  // "Singles" | "Tag Team" | null
+  result          Result?  // WIN | LOSS | DRAW | null
+  isMainEvent     Boolean?
+  isTournament    Boolean?
+  tournamentType  String?  // "SINGLE_ELIM" | "ROUND_ROBIN"
+  isFinals        Boolean? // true = tournament final / winner; false = regular round
+  isRunnerUp      Boolean? // true = runner-up placement
+  isTitleMatch    Boolean?
+  isWorldTitle    Boolean?
+  isDefense       Boolean?
+  tournamentName  String?
+  specialEvent    String?  // "ROYAL_RUMBLE" | "MITB" | "FACE_HEEL_TURN"
+  points          Int      @default(0)
+  code            String?  // short code for breakdown display e.g. "TVW", "PPVME"
+  season          Season   @relation(fields: [seasonId], references: [id])
 }
 
 model PlayerPoint {

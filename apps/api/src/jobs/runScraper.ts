@@ -49,7 +49,7 @@ async function run() {
 
     // Iterate through weeks to ensure point recalculation is thorough
     const latestDate = Math.max(...dbShows.map(s => s.date.getTime()));
-    const totalWeeks = Math.ceil(((latestDate - activeSeason.startDate.getTime()) / 86400000) / 7);
+    const totalWeeks = Math.max(1, Math.ceil(((latestDate - activeSeason.startDate.getTime() + 86400000) / 86400000) / 7));
 
     for (let week = 1; week <= totalWeeks; week++) {
         const weekStart = new Date(activeSeason.startDate.getTime() + (week - 1) * 7 * 86400000);

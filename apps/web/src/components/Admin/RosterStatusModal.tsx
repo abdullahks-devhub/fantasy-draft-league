@@ -143,11 +143,31 @@ export default function RosterStatusModal({ isOpen, onClose, onSuccess }: Roster
 
           {selectedPlayerId && (
             <div className="space-y-5 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className={`font-bold ${activePlayers.length >= 10 ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {activePlayers.length}/10
-                </span>
-                active slots used
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-800/40 p-2 rounded-lg border border-gray-700/50">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Active Slots</p>
+                  <p className={`text-lg font-mono font-bold ${activePlayers.length >= 10 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {activePlayers.length}/10
+                  </p>
+                </div>
+                <div className="bg-gray-800/40 p-2 rounded-lg border border-gray-700/50">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Bench Slots</p>
+                  <p className={`text-lg font-mono font-bold ${benchPlayers.length >= 5 ? 'text-red-400' : 'text-amber-400'}`}>
+                    {benchPlayers.length}/5
+                  </p>
+                </div>
+                <div className="bg-gray-800/40 p-2 rounded-lg border border-gray-700/50">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total Base</p>
+                  <p className={`text-lg font-mono font-bold ${activePlayers.length + benchPlayers.length >= 15 ? 'text-red-400' : 'text-white'}`}>
+                    {activePlayers.length + benchPlayers.length}/15
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${irPlayers.length >= 2 ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-gray-800 text-gray-400 border-gray-700'}`}>
+                    IR: {irPlayers.length}/2
+                 </span>
+                 <p className="text-[10px] text-gray-500 italic">IR spots don't count toward the 15 base total.</p>
               </div>
 
               {loading ? (

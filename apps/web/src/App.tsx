@@ -67,7 +67,7 @@ function App() {
               >
                 <Trophy className="w-6 h-6 text-indigo-500" />
                 <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                  Wrestling Fantasy
+                  Wrestling Fantasy League
                 </span>
               </Link>
 

@@ -60,7 +60,9 @@ export class PointCalculationService {
 
             // 5. Tournament
             if (rule.isTournament !== null && rule.isTournament !== (match as any).isTournament) ruleMatches = false;
+            if (rule.tournamentType && rule.tournamentType !== (match as any).tournamentType) ruleMatches = false;
             if (rule.isFinals !== null && rule.isFinals !== (match as any).isFinals) ruleMatches = false;
+            if (rule.isRunnerUp !== null && rule.isRunnerUp !== (match as any).isRunnerUp) ruleMatches = false;
             if (rule.tournamentName && rule.tournamentName !== (match as any).tournamentName) ruleMatches = false;
 
             // 6. Title / World Title / Defense
@@ -68,13 +70,16 @@ export class PointCalculationService {
             if (rule.isWorldTitle !== null && rule.isWorldTitle !== (primaryParticipant as any).isWorldTitle) ruleMatches = false;
             if (rule.isDefense !== null && rule.isDefense !== (primaryParticipant as any).isDefense) ruleMatches = false;
 
+            // 7. Special Events (Rumble, MitB, Turn)
+            if (rule.specialEvent && rule.specialEvent !== (match as any).specialEvent) ruleMatches = false;
+
             if (ruleMatches) {
               slotMatchPoints += rule.points;
               matchSpecificBreakdown.push({
                 ruleId: rule.id,
                 code: rule.code,
                 points: rule.points,
-                description: `${rule.showType || ''} ${rule.matchType || ''} ${rule.isMainEvent ? 'Main Event' : ''} ${rule.isFinals ? 'Finals' : ''} ${rule.result || 'Appearance'}`.trim()
+                description: rule.label || `${rule.showType || ''} ${rule.matchType || ''} ${rule.isMainEvent ? 'Main Event' : ''} ${rule.isFinals ? 'Finals' : ''} ${rule.result || 'Appearance'}`.trim()
               });
             }
           }

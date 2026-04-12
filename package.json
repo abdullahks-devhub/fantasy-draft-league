@@ -1,5 +1,5 @@
 {
-  "name": "fantasy-draft-league",
+  "name": "wrestling-fantasy-league",
   "private": true,
   "workspaces": [
     "apps/*",

@@ -2,11 +2,13 @@ import { FastifyInstance } from 'fastify';
 import prisma from '../lib/db';
 
 const MAX_ACTIVE = 10;
+const MAX_BENCH = 5;
+const MAX_TOTAL_BASE = 15;
+const MAX_IR = 2;
 
 export async function rosterRoutes(fastify: FastifyInstance) {
   /**
    * GET /rosters/:playerSeasonId
-   * Returns all slots (Active, Bench, IR) for a player.
    */
   fastify.get<{ Params: { playerSeasonId: string } }>('/:playerSeasonId', async (request, reply) => {
     const { playerSeasonId } = request.params;
@@ -19,9 +21,7 @@ export async function rosterRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * PATCH /rosters/:slotId/status   (Admin-only)
-   * Toggle a slot between ACTIVE, BENCH, IR.
-   * Enforces 10-active limit when activating.
+   * PATCH /rosters/:slotId/status
    */
   fastify.patch<{ Params: { slotId: string }; Body: { status: 'ACTIVE' | 'BENCH' | 'IR' } }>(
     '/:slotId/status', async (request, reply) => {
@@ -34,16 +34,27 @@ export async function rosterRoutes(fastify: FastifyInstance) {
       });
       if (!slot) return reply.code(404).send({ error: 'Slot not found' });
 
-      // Enforce active limit when promoting to ACTIVE
+      // Enforce limits
+      const stats = await prisma.rosterSlot.findMany({
+        where: { playerSeasonId: slot.playerSeasonId }
+      });
+
+      const activeCount = stats.filter(s => s.status === 'ACTIVE' && s.id !== slotId).length;
+      const benchCount  = stats.filter(s => s.status === 'BENCH' && s.id !== slotId).length;
+      const irCount     = stats.filter(s => s.status === 'IR'    && s.id !== slotId).length;
+
       if (status === 'ACTIVE') {
-        const activeCount = await prisma.rosterSlot.count({
-          where: { playerSeasonId: slot.playerSeasonId, status: 'ACTIVE' }
-        });
-        if (activeCount >= MAX_ACTIVE) {
-          return reply.code(400).send({
-            error: `Roster already has ${MAX_ACTIVE} active wrestlers. Move one to Bench or IR first.`
-          });
-        }
+        if (activeCount >= MAX_ACTIVE) return reply.code(400).send({ error: `Limit reached: ${MAX_ACTIVE} Active spots maximal.` });
+        if (activeCount + benchCount >= MAX_TOTAL_BASE) return reply.code(400).send({ error: `Limit reached: ${MAX_TOTAL_BASE} total roster spots (Active + Bench). Drop someone first.` });
+      }
+
+      if (status === 'BENCH') {
+        if (benchCount >= MAX_BENCH) return reply.code(400).send({ error: `Limit reached: ${MAX_BENCH} Bench spots maximal.` });
+        if (activeCount + benchCount >= MAX_TOTAL_BASE) return reply.code(400).send({ error: `Limit reached: ${MAX_TOTAL_BASE} total roster spots (Active + Bench). Drop someone first.` });
+      }
+
+      if (status === 'IR') {
+        if (irCount >= MAX_IR) return reply.code(400).send({ error: `Limit reached: ${MAX_IR} IR spots maximal.` });
       }
 
       const updated = await prisma.rosterSlot.update({
@@ -58,7 +69,6 @@ export async function rosterRoutes(fastify: FastifyInstance) {
 
   /**
    * POST /rosters/add
-   * Adds a wrestler. Enforces 10-active limit.
    */
   fastify.post<{ Body: { playerSeasonId: string; wrestlerId: string; status?: 'ACTIVE' | 'BENCH' | 'IR' } }>(
     '/add', async (request, reply) => {
@@ -69,15 +79,21 @@ export async function rosterRoutes(fastify: FastifyInstance) {
       });
       if (existing) return reply.code(400).send({ error: 'Wrestler already on roster' });
 
+      const stats = await prisma.rosterSlot.findMany({ where: { playerSeasonId } });
+      const activeCount = stats.filter(s => s.status === 'ACTIVE').length;
+      const benchCount  = stats.filter(s => s.status === 'BENCH').length;
+      const irCount     = stats.filter(s => s.status === 'IR').length;
+
       if (status === 'ACTIVE') {
-        const activeCount = await prisma.rosterSlot.count({
-          where: { playerSeasonId, status: 'ACTIVE' }
-        });
-        if (activeCount >= MAX_ACTIVE) {
-          return reply.code(400).send({
-            error: `Roster already has ${MAX_ACTIVE} active wrestlers. Add to Bench or IR instead.`
-          });
-        }
+        if (activeCount >= MAX_ACTIVE) return reply.code(400).send({ error: `Limit reached: ${MAX_ACTIVE} Active spots.` });
+        if (activeCount + benchCount >= MAX_TOTAL_BASE) return reply.code(400).send({ error: `Base roster limit reached (15). Add to IR or drop someone.` });
+      }
+      if (status === 'BENCH') {
+        if (benchCount >= MAX_BENCH) return reply.code(400).send({ error: `Limit reached: ${MAX_BENCH} Bench spots.` });
+        if (activeCount + benchCount >= MAX_TOTAL_BASE) return reply.code(400).send({ error: `Base roster limit reached (15). Add to IR or drop someone.` });
+      }
+      if (status === 'IR') {
+        if (irCount >= MAX_IR) return reply.code(400).send({ error: `Limit reached: ${MAX_IR} IR spots.` });
       }
 
       const slot = await prisma.rosterSlot.create({
