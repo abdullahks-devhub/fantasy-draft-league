@@ -6,9 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "npx prisma@5.12.1 generate --schema=apps/api/prisma/schema.prisma",
     "build:api": "npm --workspace=apps/api run build",
     "build:web": "npm --workspace=apps/web run build",
-    "build": "npx prisma@5.12.1 generate --schema=apps/api/prisma/schema.prisma && npm run build:api && npm run build:web"
+    "build": "npm run build:api && npm run build:web"
   }
 }
