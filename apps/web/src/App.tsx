@@ -69,6 +69,9 @@ function App() {
                 <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                   Wrestling Fantasy League
                 </span>
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded uppercase tracking-wider">
+                  v2.2-STABLE
+                </span>
               </Link>
 
               {/* Nav links — hidden on mobile */}
