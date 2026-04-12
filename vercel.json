@@ -7,19 +7,23 @@
       "config": {
         "distDir": "dist"
       }
+    },
+    {
+      "src": "apps/api/src/server.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://your-railway-app-api.up.railway.app/$1"
+      "dest": "apps/api/src/server.ts"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "apps/web/index.html"
     }
-  ],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/apps/web/index.html" }
   ]
 }

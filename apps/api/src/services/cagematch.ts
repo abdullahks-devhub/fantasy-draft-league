@@ -13,30 +13,51 @@ export class CagematchService {
   async scrapeRecentShows(mockHtml?: string) {
     let html = mockHtml;
     
-    // Fallback to real network request if mock is not provided
     if (!html) {
-      // In reality, this would hit the advanced search page for the last 7 days.
-      // We are stubbing the live URL request for now to prevent bans.
-      const res = await axios.get(`${this.baseUrl}/?id=1`); 
-      html = res.data as string;
+      const { chromium } = require('playwright');
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      });
+      const page = await context.newPage();
+      
+      try {
+        await page.goto(`${this.baseUrl}/?id=1&view=results`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Give time for any potential cloudflare redirection or simple table load
+        await page.waitForTimeout(2000); 
+        html = await page.content();
+      } catch (err: any) {
+        console.error('Playwright navigation failed:', err.message);
+        throw err;
+      } finally {
+        await browser.close();
+      }
     }
 
-    const $ = cheerio.load(html);
+    const $ = cheerio.load(html || '');
     const shows: any[] = [];
 
-    // Hypothetical standard Cagematch parse logic:
-    // Every cagematch table row with class 'TRRow' represents an entity
+    // Parse the advanced results page containing recent shows
     $('.TRRow').each((i, el) => {
-      const showName = $(el).find('.TCol').eq(1).text().trim();
-      const dateStr = $(el).find('.TCol').eq(0).text().trim();
-      const promotion = $(el).find('.TCol').eq(2).text().trim();
+      // In the advanced results view, indices might differ from the homepage
+      const nameCol = $(el).find('.TCol').eq(2);
+      const showName = nameCol.text().trim();
+      
+      // Link to the specific show results: ?id=1&nr=12345
+      const showHref = nameCol.find('a').attr('href');
+      
+      const dateStr = $(el).find('.TCol').eq(1).text().trim();
+      const promotion = $(el).find('.TCol').eq(3).text().trim();
 
-      if (showName) {
+      if (showName && showHref) {
         shows.push({
           name: showName,
-          date: new Date(dateStr),
+          date: new Date(dateStr.split('.').reverse().join('-')), // simple format parser often needed for EU dates
           promotion,
-          // Extract more data logic...
+          urlRef: showHref
         });
       }
     });

@@ -4,11 +4,13 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "scrape": "tsx src/jobs/runScraper.ts"
   },
   "dependencies": {
     "@fantasy/shared-types": "*",
     "@fastify/cors": "^9.0.0",
+    "axios": "^1.6.8",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.0.0",
     "cheerio": "1.0.0-rc.12",

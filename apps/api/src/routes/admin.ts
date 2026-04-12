@@ -16,27 +16,30 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
       if (!activeSeason) return reply.code(404).send({ error: 'No active season' });
 
-      // In a real app, logic would calculate the "current week" of the season
-      const currentWeek = 4; // Mock current week for now
-
-      // 1. Scrape (Mocking the scrape for now to avoid external request issues)
-      const shows = await cagematchService.scrapeRecentShows(); 
+      // Trigger GitHub Action to run the scraper via workflow_dispatch
+      const GITHUB_TOKEN = process.env.GH_PAT;
+      const GITHUB_REPO = 'abdullahks-devhub/fantasy-draft-league'; 
       
-      // 2. Identify all PlayerSeasons to recalculate
-      const playerSeasons = await prisma.playerSeason.findMany({
-        where: { seasonId: activeSeason.id }
-      });
-
-      // 3. Simple loop to trigger calculations (In prod, this would be a BullMQ background job)
-      for (const ps of playerSeasons) {
-         // We pass an empty array of matches for now to represent "nothing new" 
-         // or we'd pass real scraped matches here.
-         await pointCalcService.calculatePlayerPoints(ps.id, currentWeek, []);
+      if (!GITHUB_TOKEN) {
+         return reply.code(500).send({ error: 'GitHub Personal Access Token (GH_PAT) is missing. Cannot trigger scraper.' });
       }
 
-      return { success: true, message: `Scraper triggered for week ${currentWeek}`, activeSeason: activeSeason.name };
+      const axios = require('axios');
+      await axios.post(
+        `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/scraper.yml/dispatches`,
+        { ref: 'main' },
+        {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+
+      return { success: true, message: `Scraping process initiated via GitHub Actions successfully.` };
     } catch (err: any) {
-      return reply.code(500).send({ error: err.message });
+      console.error('Failed to trigger scraper:', err.message);
+      return reply.code(500).send({ error: 'Failed to trigger remote scraper.' });
     }
   });
 

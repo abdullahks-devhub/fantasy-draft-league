@@ -19,30 +19,41 @@ async function main() {
   // Setup generic routing
   await server.register(setupRoutes, { prefix: '/api' });
 
-  // Initialize background workers
-  setupWorkers();
+  // Only initialize background workers and queues if not in serverless environment
+  if (process.env.VERCEL !== '1') {
+    setupWorkers();
 
-  // Schedule recurring jobs if in production or explicitly requested
-  // Daily Scrape at 6 AM UTC
-  await scraperQueue.add('daily-scrape', {}, { 
-    repeat: { pattern: '0 6 * * *' },
-    jobId: 'daily-scrape' 
-  });
+    // Schedule recurring jobs if in production or explicitly requested
+    await scraperQueue.add('daily-scrape', {}, { 
+      repeat: { pattern: '0 6 * * *' },
+      jobId: 'daily-scrape' 
+    });
 
-  // Weekly Points on Sunday 23:59 UTC
-  await pointsQueue.add('weekly-points', { weekNumber: 1 }, { 
-    repeat: { pattern: '59 23 * * 0' },
-    jobId: 'weekly-points'
-  });
+    await pointsQueue.add('weekly-points', { weekNumber: 1 }, { 
+      repeat: { pattern: '59 23 * * 0' },
+      jobId: 'weekly-points'
+    });
+  }
+}
 
+// Ensure plugins are registered once
+main();
+
+// Vercel Serverless Export
+export default async function handler(req: any, res: any) {
+  await server.ready();
+  server.server.emit('request', req, res);
+}
+
+// Local Execution
+if (process.env.VERCEL !== '1') {
   try {
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-    await server.listen({ port, host: '0.0.0.0' });
-    server.log.info(`Server is dynamically bound to PORT ${port} for Railway!`);
+    server.listen({ port, host: '0.0.0.0' }).then(() => {
+       server.log.info(`Server is bound to PORT ${port}`);
+    });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
   }
 }
-
-main();
