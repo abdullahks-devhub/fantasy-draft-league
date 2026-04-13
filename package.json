@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build:api": "npm --workspace=apps/api run build",
-    "build:web": "npm --workspace=apps/web run build",
+    "build:web": "npm --workspace=apps/web run build && rm -rf dist && cp -r apps/web/dist ./dist",
     "build": "npm run build:api && npm run build:web"
   }
 }
