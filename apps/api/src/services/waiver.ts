@@ -40,7 +40,7 @@ export class WaiverService {
 
     // 3. Sort moves based on Waiver Order (Reverse Standings) and then Move Priority
     // If Points A < Points B, A has HIGHER priority (comes first in list)
-    pendingMoves.sort((a, b) => {
+    pendingMoves.sort((a: any, b: any) => {
       const pointsA = standingMap.get(a.playerSeasonId) || 0;
       const pointsB = standingMap.get(b.playerSeasonId) || 0;
 
@@ -57,15 +57,15 @@ export class WaiverService {
 
     // 4. Process moves serially to handle conflicts (e.g. 2 players want same wrestler)
     for (const move of pendingMoves) {
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         // Re-check current roster state for this player in this transaction
         const currentRoster = await tx.rosterSlot.findMany({
           where: { playerSeasonId: move.playerSeasonId },
           include: { wrestlers: true }
         });
 
-        const activeBenchCount = currentRoster.filter(s => s.status !== 'IR').length;
-        const irCount = currentRoster.filter(s => s.status === 'IR').length;
+        const activeBenchCount = currentRoster.filter((s: any) => s.status !== 'IR').length;
+        const irCount = currentRoster.filter((s: any) => s.status === 'IR').length;
 
         if (move.action === 'ADD') {
           // A. Conflict Check: Is the wrestler still available?
@@ -111,7 +111,7 @@ export class WaiverService {
         } 
         else if (move.action === 'DROP') {
           // Check ownership
-          const slot = currentRoster.find(s => s.wrestlers.some(w => w.id === move.wrestlerId));
+          const slot = currentRoster.find((s: any) => s.wrestlers.some((w: any) => w.id === move.wrestlerId));
           
           if (!slot) {
             await tx.waiverMove.update({

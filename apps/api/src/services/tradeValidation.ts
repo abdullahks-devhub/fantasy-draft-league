@@ -37,8 +37,8 @@ export class TradeValidationService {
     predictedTo.push({ ...fromOwns, playerSeasonId: toPlayerSeasonId } as any);
 
     // 5. Check constraints (< 15 roster size) is naturally preserved by 1-for-1 swaps, but we verify anyway...
-    const activeBenchFrom = predictedFrom.filter(r => r.status !== 'IR').length;
-    const activeBenchTo = predictedTo.filter(r => r.status !== 'IR').length;
+    const activeBenchFrom = predictedFrom.filter((r: any) => r.status !== 'IR').length;
+    const activeBenchTo = predictedTo.filter((r: any) => r.status !== 'IR').length;
     
     if (activeBenchFrom > 15 || activeBenchTo > 15) {
       return { valid: false, reason: 'Trade violates maximum roster size of 15.' };
